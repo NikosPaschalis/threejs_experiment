@@ -23,12 +23,32 @@ const controls = new OrbitControls(camera, renderer.domElement);
 camera.position.set(0, 5, 5);
 controls.update();
 
+//Player
 const geometry = new THREE.BoxGeometry(1, 1, 1);
 const material = new THREE.MeshBasicMaterial({ color: 0x00ff00 });
 const cube = new THREE.Mesh(geometry, material);
 cube.position.set(0, 0.5, 0);
 scene.add(cube);
+const cubeBox = new THREE.Box3();
+cubeBox.setFromObject(cube);
 
+// Collision objects
+const rockMaterial = new THREE.MeshBasicMaterial({ color: 0x9e9d9c });
+const rockGeometry = new THREE.BoxGeometry(1, 1, 1);
+
+const rock = new THREE.Mesh(rockGeometry, rockMaterial);
+rock.position.set(3, 0.5, 0);
+scene.add(rock);
+const rockBox = new THREE.Box3();
+rockBox.setFromObject(rock);
+
+const rock2 = new THREE.Mesh(rockGeometry, rockMaterial);
+rock2.position.set(3, 0.5, 5);
+scene.add(rock2);
+const rockBox2 = new THREE.Box3();
+rockBox2.setFromObject(rock2);
+
+const collisionObjsList = [rockBox, rockBox2];
 //Floor
 const floorGeometry = new THREE.PlaneGeometry(100, 50, 2);
 const floorMaterial = new THREE.MeshBasicMaterial({ color: 0x008000 });
@@ -62,9 +82,11 @@ function characterMovement(delta) {
 let verticalVelocity = 0;
 let isGrounded = true;
 const gravity = -1;
+let cubePositionBeforeCollision = new THREE.Vector3().copy(cube.position);
 
 function animate() {
   const delta = clock.getDelta();
+  cubePositionBeforeCollision = cubePositionBeforeCollision.copy(cube.position);
   characterMovement(delta);
 
   //It makes the camera follow the cube/player
@@ -91,6 +113,17 @@ function animate() {
     verticalVelocity = 1.6;
     isGrounded = false;
   }
+  //checks the cube position for collision checks later on
+  cubeBox.setFromObject(cube);
+
+  //Player and rocks collisions
+  for (let i = 0; i < collisionObjsList.length; i++) {
+    if (cubeBox.intersectsBox(collisionObjsList[i])) {
+      console.log('collision with:', collisionObjsList[i]);
+      cube.position.copy(cubePositionBeforeCollision);
+    }
+  }
+
   renderer.render(scene, camera);
 }
 renderer.setAnimationLoop(animate);
