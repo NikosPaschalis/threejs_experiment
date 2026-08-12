@@ -3,6 +3,7 @@ export const keys = {
   backward: false,
   left: false,
   right: false,
+  jump: false,
 };
 
 //WASD check
@@ -25,6 +26,10 @@ document.addEventListener('keydown', (keyDown) => {
     keys.right = true;
     console.log(keyDown);
   }
+  if (keyDown.key === ' ') {
+    keys.jump = true;
+    console.log(keyDown);
+  }
 });
 //Keyup check
 document.addEventListener('keyup', (keyUp) => {
@@ -42,6 +47,10 @@ document.addEventListener('keyup', (keyUp) => {
   }
   if (keyUp.key === 'D' || keyUp.key === 'd') {
     keys.right = false;
+    console.log(keyUp);
+  }
+  if (keyUp.key === ' ') {
+    keys.jump = false;
     console.log(keyUp);
   }
 });

@@ -26,7 +26,7 @@ controls.update();
 const geometry = new THREE.BoxGeometry(1, 1, 1);
 const material = new THREE.MeshBasicMaterial({ color: 0x00ff00 });
 const cube = new THREE.Mesh(geometry, material);
-cube.position.set(0, 0.8, 0);
+cube.position.set(0, 0.5, 0);
 scene.add(cube);
 
 //Floor
@@ -55,7 +55,13 @@ function characterMovement(delta) {
   }
   direction.normalize().multiplyScalar(delta);
   cube.position.add(direction);
+  camera.position.add(direction);
 }
+//Testing some basic physics
+
+let verticalVelocity = 0;
+let isGrounded = true;
+const gravity = -1;
 
 function animate() {
   const delta = clock.getDelta();
@@ -64,8 +70,27 @@ function animate() {
   //It makes the camera follow the cube/player
   controls.target.copy(cube.position);
   controls.update();
-  cube.rotation.x += delta;
-  cube.rotation.y += delta * 0.5;
+
+  verticalVelocity += gravity * delta;
+  cube.position.y += verticalVelocity * delta;
+
+  //Testing if cube hitted the floor
+  if (cube.position.y <= 0.5) {
+    verticalVelocity = 0;
+    cube.position.y = 0.5;
+    isGrounded = true;
+    cube.rotation.set(0, 0, 0);
+  }
+  if (!isGrounded) {
+    cube.rotation.x += delta;
+    cube.rotation.y += delta * 0.5;
+    cube.rotation.z += delta * 1;
+  }
+  // Checking the jump with gravity
+  if (isGrounded && keys.jump) {
+    verticalVelocity = 1.6;
+    isGrounded = false;
+  }
   renderer.render(scene, camera);
 }
 renderer.setAnimationLoop(animate);
