@@ -6,7 +6,9 @@ const scene = new THREE.Scene();
 
 const axesHelper = new THREE.AxesHelper(3);
 scene.add(axesHelper);
-
+const loader = new THREE.TextureLoader();
+const rockTexture = loader.load('./5911.jpg');
+rockTexture.colorSpace = THREE.SRGBColorSpace;
 const camera = new THREE.PerspectiveCamera(
   75,
   window.innerWidth / window.innerHeight,
@@ -33,7 +35,7 @@ const cubeBox = new THREE.Box3();
 cubeBox.setFromObject(cube);
 
 // Collision objects
-const rockMaterial = new THREE.MeshBasicMaterial({ color: 0x9e9d9c });
+const rockMaterial = new THREE.MeshBasicMaterial({ map: rockTexture });
 const rockGeometry = new THREE.BoxGeometry(1, 1, 1);
 
 const rock = new THREE.Mesh(rockGeometry, rockMaterial);
@@ -47,8 +49,31 @@ rock2.position.set(3, 0.5, 5);
 scene.add(rock2);
 const rockBox2 = new THREE.Box3();
 rockBox2.setFromObject(rock2);
+//Tree
+//Trunk
+const trunkGeometry = new THREE.CylinderGeometry(0.5, 0.5, 3, 16);
+const truckMaterial = new THREE.MeshBasicMaterial({ color: 0x954535 });
+const trunk = new THREE.Mesh(trunkGeometry, truckMaterial);
+trunk.position.set(0, 1.5, 0);
 
-const collisionObjsList = [rockBox, rockBox2];
+//Leafs
+const leafGeometry = new THREE.ConeGeometry(3, 2, 4);
+const leafMaterial = new THREE.MeshBasicMaterial({ color: 0x2d9966 });
+const leaf = new THREE.Mesh(leafGeometry, leafMaterial);
+leaf.position.set(0, 4, 0);
+
+//tree group
+const tree = new THREE.Group();
+tree.add(trunk);
+tree.add(leaf);
+tree.position.set(5, 0, 5);
+scene.add(tree);
+
+tree.updateMatrixWorld(true);
+
+const trunkBox = new THREE.Box3();
+trunkBox.setFromObject(trunk);
+const collisionObjsList = [rockBox, rockBox2, trunkBox];
 //Floor
 const floorGeometry = new THREE.PlaneGeometry(100, 50, 2);
 const floorMaterial = new THREE.MeshBasicMaterial({ color: 0x008000 });
@@ -83,15 +108,16 @@ let verticalVelocity = 0;
 let isGrounded = true;
 const gravity = -1;
 let cubePositionBeforeCollision = new THREE.Vector3().copy(cube.position);
+let cameraPositionBeforeCollision = new THREE.Vector3().copy(camera.position);
 
 function animate() {
   const delta = clock.getDelta();
   cubePositionBeforeCollision = cubePositionBeforeCollision.copy(cube.position);
-  characterMovement(delta);
+  cameraPositionBeforeCollision = cameraPositionBeforeCollision.copy(
+    camera.position,
+  );
 
-  //It makes the camera follow the cube/player
-  controls.target.copy(cube.position);
-  controls.update();
+  characterMovement(delta);
 
   verticalVelocity += gravity * delta;
   cube.position.y += verticalVelocity * delta;
@@ -121,9 +147,13 @@ function animate() {
     if (cubeBox.intersectsBox(collisionObjsList[i])) {
       console.log('collision with:', collisionObjsList[i]);
       cube.position.copy(cubePositionBeforeCollision);
+      camera.position.copy(cameraPositionBeforeCollision);
     }
   }
 
+  //It makes the camera follow the cube/player
+  controls.target.copy(cube.position);
+  controls.update();
   renderer.render(scene, camera);
 }
 renderer.setAnimationLoop(animate);
