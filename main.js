@@ -15,8 +15,23 @@ const camera = new THREE.PerspectiveCamera(
   0.1,
   1000,
 );
+//Lights
+//scene light
+const light = new THREE.AmbientLight( 0xFFCA7B, 1); 
 
-const renderer = new THREE.WebGLRenderer();
+scene.add( light );
+
+const directionalLight = new THREE.DirectionalLight( 0xffffff, 3);
+directionalLight.position.set(3,15,10);
+directionalLight.castShadow = true;
+scene.add( directionalLight );
+const helper = new THREE.DirectionalLightHelper( directionalLight, 10 );
+scene.add( helper );
+
+
+
+const renderer = new THREE.WebGLRenderer({antialias: true});
+renderer.shadowMap.enabled = true;
 renderer.setSize(window.innerWidth, window.innerHeight);
 document.body.appendChild(renderer.domElement);
 
@@ -27,40 +42,46 @@ controls.update();
 
 //Player
 const geometry = new THREE.BoxGeometry(1, 1, 1);
-const material = new THREE.MeshBasicMaterial({ color: 0x00ff00 });
+const material = new THREE.MeshStandardMaterial({ color: 0x00ff00 });
 const cube = new THREE.Mesh(geometry, material);
+cube.castShadow = true;
 cube.position.set(0, 0.5, 0);
 scene.add(cube);
 const cubeBox = new THREE.Box3();
 cubeBox.setFromObject(cube);
 
+
 // Collision objects
-const rockMaterial = new THREE.MeshBasicMaterial({ map: rockTexture });
+const rockMaterial = new THREE.MeshStandardMaterial({ map: rockTexture });
 const rockGeometry = new THREE.BoxGeometry(1, 1, 1);
 
 const rock = new THREE.Mesh(rockGeometry, rockMaterial);
 rock.position.set(3, 0.5, 0);
+rock.castShadow = true;
 scene.add(rock);
 const rockBox = new THREE.Box3();
 rockBox.setFromObject(rock);
 
 const rock2 = new THREE.Mesh(rockGeometry, rockMaterial);
 rock2.position.set(3, 0.5, 5);
+rock2.castShadow = true;
 scene.add(rock2);
 const rockBox2 = new THREE.Box3();
 rockBox2.setFromObject(rock2);
 //Tree
 //Trunk
 const trunkGeometry = new THREE.CylinderGeometry(0.5, 0.5, 3, 16);
-const truckMaterial = new THREE.MeshBasicMaterial({ color: 0x954535 });
+const truckMaterial = new THREE.MeshStandardMaterial({ color: 0x954535 });
 const trunk = new THREE.Mesh(trunkGeometry, truckMaterial);
 trunk.position.set(0, 1.5, 0);
+trunk.castShadow = true;
 
 //Leafs
 const leafGeometry = new THREE.ConeGeometry(3, 2, 4);
-const leafMaterial = new THREE.MeshBasicMaterial({ color: 0x2d9966 });
+const leafMaterial = new THREE.MeshStandardMaterial({ color: 0x2d9966 });
 const leaf = new THREE.Mesh(leafGeometry, leafMaterial);
 leaf.position.set(0, 4, 0);
+leaf.castShadow = true;
 
 //tree group
 const tree = new THREE.Group();
@@ -76,8 +97,9 @@ trunkBox.setFromObject(trunk);
 const collisionObjsList = [rockBox, rockBox2, trunkBox];
 //Floor
 const floorGeometry = new THREE.PlaneGeometry(100, 50, 2);
-const floorMaterial = new THREE.MeshBasicMaterial({ color: 0x008000 });
+const floorMaterial = new THREE.MeshStandardMaterial({ color: 0x008000 });
 const floor = new THREE.Mesh(floorGeometry, floorMaterial);
+floor.receiveShadow = true;
 floor.rotation.x = -Math.PI / 2;
 floor.position.set(0, 0, 0);
 scene.add(floor);
