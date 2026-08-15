@@ -97,7 +97,27 @@ trunkBox.setFromObject(trunk);
 const collisionObjsList = [rockBox, rockBox2, trunkBox];
 //Sky
 const skyGeometry = new THREE.SphereGeometry(50,32,16);
-const skyMaterial = new THREE.MeshBasicMaterial({color : 0x87CEEB, side: THREE.BackSide})
+const skyMaterial = new THREE.ShaderMaterial({
+  vertexShader: `
+  varying vec2 vUv;
+  void main(){
+  vUv = uv;
+  gl_Position = 
+  projectionMatrix * 
+  modelViewMatrix *
+  vec4(position,1.0);}
+  `,
+  fragmentShader: `
+  varying vec2 vUv;
+  void main(){
+  vec3 horizonColor = vec3(0.8, 0.9, 1.0);
+  vec3 zenithColor = vec3(0.1, 0.3, 0.8);
+  vec3 finalColor = mix(horizonColor,zenithColor, vUv.y);
+
+  gl_FragColor = vec4(finalColor,1.0);
+  }
+  `,
+ side: THREE.BackSide});
 const sky = new THREE.Mesh(skyGeometry,skyMaterial);
 scene.add(sky);
 //Floor
