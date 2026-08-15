@@ -95,6 +95,11 @@ tree.updateMatrixWorld(true);
 const trunkBox = new THREE.Box3();
 trunkBox.setFromObject(trunk);
 const collisionObjsList = [rockBox, rockBox2, trunkBox];
+//Sky
+const skyGeometry = new THREE.SphereGeometry(50,32,16);
+const skyMaterial = new THREE.MeshBasicMaterial({color : 0x87CEEB, side: THREE.BackSide})
+const sky = new THREE.Mesh(skyGeometry,skyMaterial);
+scene.add(sky);
 //Floor
 const floorGeometry = new THREE.PlaneGeometry(100, 50, 2);
 const floorMaterial = new THREE.MeshStandardMaterial({ color: 0x008000 });
@@ -176,6 +181,7 @@ function animate() {
   //It makes the camera follow the cube/player
   controls.target.copy(cube.position);
   controls.update();
+  sky.position.copy(camera.position);
   renderer.render(scene, camera);
 }
 renderer.setAnimationLoop(animate);
