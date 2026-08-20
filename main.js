@@ -7,7 +7,7 @@ const scene = new THREE.Scene();
 const axesHelper = new THREE.AxesHelper(3);
 scene.add(axesHelper);
 const loader = new THREE.TextureLoader();
-const rockTexture = loader.load('./5911.jpg');
+const rockTexture = loader.load('./rock.png');
 rockTexture.colorSpace = THREE.SRGBColorSpace;
 const camera = new THREE.PerspectiveCamera(
   75,
@@ -17,20 +17,18 @@ const camera = new THREE.PerspectiveCamera(
 );
 //Lights
 //scene light
-const light = new THREE.AmbientLight( 0xFFCA7B, 1); 
+const light = new THREE.AmbientLight(0xffca7b, 1);
 
-scene.add( light );
+scene.add(light);
 
-const directionalLight = new THREE.DirectionalLight( 0xffffff, 3);
-directionalLight.position.set(3,15,10);
+const directionalLight = new THREE.DirectionalLight(0xffffff, 3);
+directionalLight.position.set(3, 15, 10);
 directionalLight.castShadow = true;
-scene.add( directionalLight );
-const helper = new THREE.DirectionalLightHelper( directionalLight, 10 );
-scene.add( helper );
+scene.add(directionalLight);
+const helper = new THREE.DirectionalLightHelper(directionalLight, 10);
+scene.add(helper);
 
-
-
-const renderer = new THREE.WebGLRenderer({antialias: true});
+const renderer = new THREE.WebGLRenderer({ antialias: true });
 renderer.shadowMap.enabled = true;
 renderer.setSize(window.innerWidth, window.innerHeight);
 document.body.appendChild(renderer.domElement);
@@ -49,7 +47,6 @@ cube.position.set(0, 0.5, 0);
 scene.add(cube);
 const cubeBox = new THREE.Box3();
 cubeBox.setFromObject(cube);
-
 
 // Collision objects
 const rockMaterial = new THREE.MeshStandardMaterial({ map: rockTexture });
@@ -96,35 +93,46 @@ const trunkBox = new THREE.Box3();
 trunkBox.setFromObject(trunk);
 const collisionObjsList = [rockBox, rockBox2, trunkBox];
 //Sky
-const skyGeometry = new THREE.SphereGeometry(50,32,16);
+const skyGeometry = new THREE.SphereGeometry(50, 32, 16);
 //sky shader material
 const skyMaterial = new THREE.ShaderMaterial({
   uniforms: {
-   uHorizonColor : { value : new THREE.Color(0xcfefff)},
-   uZenithColor : { value : new THREE.Color(0x1a4fa3)},
+    uHorizonColor: { value: new THREE.Color(0xcfefff) },
+    uZenithColor: { value: new THREE.Color(0x1a4fa3) },
+    uGradientStart: { value: 0.1 },
+    uGradientEnd: { value: 0.8 },
   },
   vertexShader: `
-  varying vec2 vUv;
+
+  varying vec3 vPosition;
   void main(){
-  vUv = uv;
+
   gl_Position = 
   projectionMatrix * 
   modelViewMatrix *
-  vec4(position,1.0);}
+  vec4(position,1.0);
+  vPosition = normalize(position);
+  }
   `,
   fragmentShader: `
-  varying vec2 vUv;
+
+  varying vec3 vPosition;
   uniform vec3 uHorizonColor;
   uniform vec3 uZenithColor;
+  uniform float uGradientStart;
+  uniform float uGradientEnd;
   void main(){
-  float gradientFactor = smoothstep(0.1, 0.8, vUv.y);
+  vec3 up = vec3(0.0,1.0,0.0);
+  float skyHeight = dot(vPosition,up);
+  float gradientFactor = smoothstep(uGradientStart, uGradientEnd, skyHeight);
   vec3 finalColor = mix(uHorizonColor,uZenithColor, gradientFactor);
 
   gl_FragColor = vec4(finalColor,1.0);
   }
   `,
- side: THREE.BackSide});
-const sky = new THREE.Mesh(skyGeometry,skyMaterial);
+  side: THREE.BackSide,
+});
+const sky = new THREE.Mesh(skyGeometry, skyMaterial);
 scene.add(sky);
 //Floor
 const floorGeometry = new THREE.PlaneGeometry(100, 50, 2);
