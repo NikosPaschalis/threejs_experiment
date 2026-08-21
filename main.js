@@ -3,7 +3,8 @@ import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { keys } from './input.js';
 
 const scene = new THREE.Scene();
-
+//initialization of time
+let timeOfDay = 0;
 const axesHelper = new THREE.AxesHelper(3);
 scene.add(axesHelper);
 const loader = new THREE.TextureLoader();
@@ -94,11 +95,32 @@ trunkBox.setFromObject(trunk);
 const collisionObjsList = [rockBox, rockBox2, trunkBox];
 //Sky
 const skyGeometry = new THREE.SphereGeometry(50, 32, 16);
+//Sky Color Paletee
+
+const skyPalettes = {
+  midnight: {
+    horizon: new THREE.Color(0x253a63),
+    zenith: new THREE.Color(0x08152f),
+  },
+  sunrise: {
+    horizon: new THREE.Color(0xffb36b),
+    zenith: new THREE.Color(0x7378c8),
+  },
+  noon: {
+    horizon: new THREE.Color(0xcfefff),
+    zenith: new THREE.Color(0x2a66b7),
+  },
+  sunset: {
+    horizon: new THREE.Color(0xe89a72),
+    zenith: new THREE.Color(0x514789),
+  },
+};
 //sky shader material
 const skyMaterial = new THREE.ShaderMaterial({
   uniforms: {
-    uHorizonColor: { value: new THREE.Color(0xcfefff) },
-    uZenithColor: { value: new THREE.Color(0x1a4fa3) },
+    uHorizonColor: { value: skyPalettes.midnight.horizon.clone() },
+    uZenithColor: { value: skyPalettes.midnight.zenith.clone() },
+    uTimeOfDay: { value: timeOfDay },
     uGradientStart: { value: 0.1 },
     uGradientEnd: { value: 0.8 },
   },
@@ -121,6 +143,7 @@ const skyMaterial = new THREE.ShaderMaterial({
   uniform vec3 uZenithColor;
   uniform float uGradientStart;
   uniform float uGradientEnd;
+  uniform float uTimeOfDay;
   void main(){
   vec3 up = vec3(0.0,1.0,0.0);
   float skyHeight = dot(vPosition,up);
@@ -171,12 +194,68 @@ const gravity = -1;
 let cubePositionBeforeCollision = new THREE.Vector3().copy(cube.position);
 let cameraPositionBeforeCollision = new THREE.Vector3().copy(camera.position);
 
+//Const for how long in seconds a day will be
+const lengthOfDay = 60;
 function animate() {
   const delta = clock.getDelta();
   cubePositionBeforeCollision = cubePositionBeforeCollision.copy(cube.position);
   cameraPositionBeforeCollision = cameraPositionBeforeCollision.copy(
     camera.position,
   );
+  timeOfDay += delta / lengthOfDay;
+  //we need to keep the value 0-1 otherwise it keeps increasing
+  timeOfDay = timeOfDay % 1;
+  skyMaterial.uniforms.uTimeOfDay.value = timeOfDay;
+  //set colorPalette based on time and the mix of palettes between transition
+  if (timeOfDay < 0.25) {
+    const localT = (timeOfDay - 0) / (0.25 - 0);
+    skyMaterial.uniforms.uHorizonColor.value.lerpColors(
+      skyPalettes.midnight.horizon,
+      skyPalettes.sunrise.horizon,
+      localT,
+    );
+    skyMaterial.uniforms.uZenithColor.value.lerpColors(
+      skyPalettes.midnight.zenith,
+      skyPalettes.sunrise.zenith,
+      localT,
+    );
+  } else if (timeOfDay < 0.5) {
+    const localT = (timeOfDay - 0.25) / (0.5 - 0.25);
+    skyMaterial.uniforms.uHorizonColor.value.lerpColors(
+      skyPalettes.sunrise.horizon,
+      skyPalettes.noon.horizon,
+      localT,
+    );
+    skyMaterial.uniforms.uZenithColor.value.lerpColors(
+      skyPalettes.sunrise.zenith,
+      skyPalettes.noon.zenith,
+      localT,
+    );
+  } else if (timeOfDay < 0.75) {
+    const localT = (timeOfDay - 0.5) / (0.75 - 0.5);
+    skyMaterial.uniforms.uHorizonColor.value.lerpColors(
+      skyPalettes.noon.horizon,
+      skyPalettes.sunset.horizon,
+      localT,
+    );
+    skyMaterial.uniforms.uZenithColor.value.lerpColors(
+      skyPalettes.noon.zenith,
+      skyPalettes.sunset.zenith,
+      localT,
+    );
+  } else {
+    const localT = (timeOfDay - 0.75) / (1 - 0.75);
+    skyMaterial.uniforms.uHorizonColor.value.lerpColors(
+      skyPalettes.sunset.horizon,
+      skyPalettes.midnight.horizon,
+      localT,
+    );
+    skyMaterial.uniforms.uZenithColor.value.lerpColors(
+      skyPalettes.sunset.zenith,
+      skyPalettes.midnight.zenith,
+      localT,
+    );
+  }
 
   characterMovement(delta);
 
