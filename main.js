@@ -16,6 +16,7 @@ const camera = new THREE.PerspectiveCamera(
   0.1,
   1000,
 );
+
 //Lights
 //scene light
 const light = new THREE.AmbientLight(0xffca7b, 1);
@@ -33,7 +34,11 @@ const renderer = new THREE.WebGLRenderer({ antialias: true });
 renderer.shadowMap.enabled = true;
 renderer.setSize(window.innerWidth, window.innerHeight);
 document.body.appendChild(renderer.domElement);
-
+window.addEventListener('resize', () => {
+  camera.aspect = window.innerWidth / window.innerHeight;
+  camera.updateProjectionMatrix();
+  renderer.setSize(window.innerWidth, window.innerHeight);
+});
 const controls = new OrbitControls(camera, renderer.domElement);
 // controls.update() must be called after any manual changes to the camera's transform
 camera.position.set(0, 5, 5);
@@ -157,6 +162,16 @@ const skyMaterial = new THREE.ShaderMaterial({
 });
 const sky = new THREE.Mesh(skyGeometry, skyMaterial);
 scene.add(sky);
+//Sun
+const sunGeometry = new THREE.SphereGeometry(2, 64, 32);
+const sunMaterial = new THREE.MeshBasicMaterial({ color: 0xffcc33 });
+const sun = new THREE.Mesh(sunGeometry, sunMaterial);
+sky.add(sun);
+//Moon
+const moonGeometry = new THREE.SphereGeometry(2, 64, 32);
+const moonMaterial = new THREE.MeshBasicMaterial({ color: 0xd8e6ff });
+const moon = new THREE.Mesh(moonGeometry, moonMaterial);
+sky.add(moon);
 //Floor
 const floorGeometry = new THREE.PlaneGeometry(100, 50, 2);
 const floorMaterial = new THREE.MeshStandardMaterial({ color: 0x008000 });
@@ -196,6 +211,7 @@ let cameraPositionBeforeCollision = new THREE.Vector3().copy(camera.position);
 
 //Const for how long in seconds a day will be
 const lengthOfDay = 60;
+
 function animate() {
   const delta = clock.getDelta();
   cubePositionBeforeCollision = cubePositionBeforeCollision.copy(cube.position);
@@ -206,6 +222,17 @@ function animate() {
   //we need to keep the value 0-1 otherwise it keeps increasing
   timeOfDay = timeOfDay % 1;
   skyMaterial.uniforms.uTimeOfDay.value = timeOfDay;
+
+  //setting the sun and moon position based on time
+  const sunAngle = (timeOfDay - 0.25) * Math.PI * 2;
+  const sunX = Math.cos(sunAngle) * 40;
+  const sunY = Math.sin(sunAngle) * 40;
+  sun.position.set(sunX, sunY, 0);
+
+  const moonAngle = sunAngle + Math.PI;
+  const moonX = Math.cos(moonAngle) * 40;
+  const moonY = Math.sin(moonAngle) * 40;
+  moon.position.set(moonX, moonY, 0);
   //set colorPalette based on time and the mix of palettes between transition
   if (timeOfDay < 0.25) {
     const localT = (timeOfDay - 0) / (0.25 - 0);
