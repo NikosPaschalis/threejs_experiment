@@ -75,8 +75,8 @@ rockBox2.setFromObject(rock2);
 //Tree
 //Trunk
 const trunkGeometry = new THREE.CylinderGeometry(0.5, 0.5, 3, 16);
-const truckMaterial = new THREE.MeshStandardMaterial({ color: 0x954535 });
-const trunk = new THREE.Mesh(trunkGeometry, truckMaterial);
+const trunkMaterial = new THREE.MeshStandardMaterial({ color: 0x954535 });
+const trunk = new THREE.Mesh(trunkGeometry, trunkMaterial);
 trunk.position.set(0, 1.5, 0);
 trunk.castShadow = true;
 
@@ -200,18 +200,53 @@ const grassField = new THREE.InstancedMesh(
   grassMaterial,
   100000,
 );
+//Forest generation with instanceMesh
+const trunkInstances = new THREE.InstancedMesh(
+  trunkGeometry,
+  trunkMaterial,
+  40,
+);
+const leafInstances = new THREE.InstancedMesh(leafGeometry, leafMaterial, 40);
 const dummy = new THREE.Object3D();
+const trunkDummy = new THREE.Object3D();
+const leafDummy = new THREE.Object3D();
+//grass loop
 for (let i = 0; i < grassField.count; i++) {
+  //grass dummy
   dummy.position.x = Math.random() * 100 - 50;
   dummy.position.z = Math.random() * 50 - 25;
   dummy.rotation.y = Math.random() * Math.PI;
   const randomHeight = 0.6 + Math.random() * 0.4;
   dummy.scale.set(1, randomHeight, 1);
   dummy.updateMatrix();
+
   grassField.setMatrixAt(i, dummy.matrix);
 }
+//tree loop
+for (let i = 0; i < trunkInstances.count; i++) {
+  //trunk dummy for position
+  trunkDummy.position.x = Math.random() * 100 - 50;
+  trunkDummy.position.z = Math.random() * 50 - 25;
+  trunkDummy.position.y = 1.5;
+
+  trunkDummy.updateMatrix();
+  //leaf dummy for position
+  leafDummy.position.x = trunkDummy.position.x;
+  leafDummy.position.z = trunkDummy.position.z;
+  leafDummy.position.y = 4;
+
+  leafDummy.updateMatrix();
+  trunkInstances.setMatrixAt(i, trunkDummy.matrix);
+  leafInstances.setMatrixAt(i, leafDummy.matrix);
+}
+trunkInstances.castShadow = true;
+leafInstances.castShadow = true;
 grassField.instanceMatrix.needsUpdate = true;
+trunkInstances.instanceMatrix.needsUpdate = true;
+leafInstances.instanceMatrix.needsUpdate = true;
 scene.add(grassField);
+scene.add(trunkInstances);
+scene.add(leafInstances);
 const clock = new THREE.Clock();
 
 function characterMovement(delta) {
