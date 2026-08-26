@@ -25,6 +25,7 @@ scene.add(light);
 
 const directionalLight = new THREE.DirectionalLight(0xffffff, 3);
 directionalLight.position.set(3, 15, 10);
+
 directionalLight.castShadow = true;
 scene.add(directionalLight);
 const helper = new THREE.DirectionalLightHelper(directionalLight, 10);
@@ -180,7 +181,37 @@ floor.receiveShadow = true;
 floor.rotation.x = -Math.PI / 2;
 floor.position.set(0, 0, 0);
 scene.add(floor);
-
+//grass
+const grassGeometry = new THREE.PlaneGeometry(0.08, 0.55, 1, 5);
+grassGeometry.translate(0, 0.275, 0);
+const grassMaterial = new THREE.MeshStandardMaterial({
+  color: 0x4f772d,
+  side: THREE.DoubleSide,
+  roughness: 0.9,
+});
+//Modify the grass to look pointy at the top
+const grassPositions = grassGeometry.getAttribute('position');
+grassPositions.setX(0, 0);
+grassPositions.setX(1, 0);
+grassPositions.needsUpdate = true;
+//Grassfield generation with instanceMesh for performance
+const grassField = new THREE.InstancedMesh(
+  grassGeometry,
+  grassMaterial,
+  100000,
+);
+const dummy = new THREE.Object3D();
+for (let i = 0; i < grassField.count; i++) {
+  dummy.position.x = Math.random() * 100 - 50;
+  dummy.position.z = Math.random() * 50 - 25;
+  dummy.rotation.y = Math.random() * Math.PI;
+  const randomHeight = 0.6 + Math.random() * 0.4;
+  dummy.scale.set(1, randomHeight, 1);
+  dummy.updateMatrix();
+  grassField.setMatrixAt(i, dummy.matrix);
+}
+grassField.instanceMatrix.needsUpdate = true;
+scene.add(grassField);
 const clock = new THREE.Clock();
 
 function characterMovement(delta) {
