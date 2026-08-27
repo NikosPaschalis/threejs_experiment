@@ -24,11 +24,18 @@ const light = new THREE.AmbientLight(0xffca7b, 1);
 scene.add(light);
 
 const directionalLight = new THREE.DirectionalLight(0xffffff, 3);
-directionalLight.position.set(3, 15, 10);
-
 directionalLight.castShadow = true;
+directionalLight.shadow.camera.left = -20;
+directionalLight.shadow.camera.right = 20;
+directionalLight.shadow.camera.top = 20;
+directionalLight.shadow.camera.bottom = -20;
+directionalLight.shadow.camera.updateProjectionMatrix();
 scene.add(directionalLight);
 const helper = new THREE.DirectionalLightHelper(directionalLight, 10);
+const shadowCameraHelper = new THREE.CameraHelper(
+  directionalLight.shadow.camera,
+);
+scene.add(shadowCameraHelper);
 scene.add(helper);
 
 const renderer = new THREE.WebGLRenderer({ antialias: true });
@@ -277,7 +284,9 @@ let cameraPositionBeforeCollision = new THREE.Vector3().copy(camera.position);
 
 //Const for how long in seconds a day will be
 const lengthOfDay = 60;
-
+// Learning note: Revisit and reconstruct the sun/moon angle, direction,
+// orbit radius, and sky-local positioning before extracting the sky system.
+const sunDirection = new THREE.Vector3();
 function animate() {
   const delta = clock.getDelta();
   cubePositionBeforeCollision = cubePositionBeforeCollision.copy(cube.position);
@@ -291,9 +300,12 @@ function animate() {
 
   //setting the sun and moon position based on time
   const sunAngle = (timeOfDay - 0.25) * Math.PI * 2;
-  const sunX = Math.cos(sunAngle) * 40;
-  const sunY = Math.sin(sunAngle) * 40;
-  sun.position.set(sunX, sunY, 0);
+  sunDirection.set(Math.cos(sunAngle), Math.sin(sunAngle), 0);
+  sun.position.copy(sunDirection);
+  sun.position.multiplyScalar(40);
+  directionalLight.position.copy(sunDirection);
+  directionalLight.position.multiplyScalar(40);
+  helper.update();
 
   const moonAngle = sunAngle + Math.PI;
   const moonX = Math.cos(moonAngle) * 40;

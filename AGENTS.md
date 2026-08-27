@@ -1045,6 +1045,35 @@ Teach the concept, not only the API.
 
 ---
 
+## 4A. Introduce unfamiliar APIs and hidden subsystems explicitly
+
+When a task requires a class, property, method, coordinate space, rendering
+subsystem, or configuration concept that I have not used before, do not present
+it only as a line of code to add.
+
+First give a short, focused lesson explaining:
+
+- what problem it solves;
+- which object owns the API and why;
+- the mental model behind its important values;
+- what changes visually when those values change;
+- any immediate performance or correctness tradeoff;
+- how it connects to concepts I already know.
+
+Then give one small isolated experiment before using it as part of a larger
+feature. Introduce only the minimum unfamiliar properties needed for that
+experiment.
+
+Examples include:
+
+- directional-light shadow cameras and their orthographic bounds;
+- texture color spaces and filtering;
+- render targets and post-processing passes;
+- physics-engine bodies, colliders, and simulation steps;
+- networking clocks, ticks, snapshots, and ownership.
+
+---
+
 ## 5. Give a small challenge
 
 Give me a narrowly scoped task.
