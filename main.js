@@ -5,8 +5,6 @@ import { keys } from './input.js';
 const scene = new THREE.Scene();
 //initialization of time
 let timeOfDay = 0;
-const axesHelper = new THREE.AxesHelper(3);
-scene.add(axesHelper);
 const loader = new THREE.TextureLoader();
 const rockTexture = loader.load('./rock.png');
 rockTexture.colorSpace = THREE.SRGBColorSpace;
@@ -52,13 +50,51 @@ const controls = new OrbitControls(camera, renderer.domElement);
 camera.position.set(0, 5, 5);
 controls.update();
 
+// Fireflies
+const fireflyGeometry = new THREE.BufferGeometry();
+const fireflyVertices = [];
+for (let i = 0; i < 15; i++) {
+  let x = 20 * Math.random() - 10;
+  let y = 10 * Math.random() - 5;
+  let z = 20 * Math.random() - 10;
+  fireflyVertices.push(x, y, z);
+}
+fireflyGeometry.setAttribute(
+  'position',
+  new THREE.Float32BufferAttribute(fireflyVertices, 3),
+);
+const fireflyMaterial = new THREE.ShaderMaterial({
+  uniforms: {},
+  vertexShader: `
+  void main(){
+  vec2 pointCoordinate = gl_PointCoord;
+  gl_PointSize = 20.0;
+  gl_Position = 
+  projectionMatrix * 
+  modelViewMatrix *
+  vec4(position,1.0);
+  }
+  `,
+  fragmentShader: `
+  void main(){
+  vec3 finalColor = vec3(0.0, 1.0, 0.0);
+  gl_FragColor = vec4(finalColor,1.0);
+  }
+  `,
+});
+const fireflyParticles = new THREE.Points(fireflyGeometry, fireflyMaterial);
+scene.add(fireflyParticles);
+
 //Player
 const geometry = new THREE.BoxGeometry(1, 1, 1);
 const material = new THREE.MeshStandardMaterial({ color: 0x00ff00 });
 const cube = new THREE.Mesh(geometry, material);
 cube.castShadow = true;
 cube.position.set(0, 0.5, 0);
+
 scene.add(cube);
+
+directionalLight.target = cube;
 const cubeBox = new THREE.Box3();
 cubeBox.setFromObject(cube);
 
@@ -303,9 +339,6 @@ function animate() {
   sunDirection.set(Math.cos(sunAngle), Math.sin(sunAngle), 0);
   sun.position.copy(sunDirection);
   sun.position.multiplyScalar(40);
-  directionalLight.position.copy(sunDirection);
-  directionalLight.position.multiplyScalar(40);
-  helper.update();
 
   const moonAngle = sunAngle + Math.PI;
   const moonX = Math.cos(moonAngle) * 40;
@@ -395,6 +428,9 @@ function animate() {
       camera.position.copy(cameraPositionBeforeCollision);
     }
   }
+  directionalLight.position.copy(cube.position);
+  directionalLight.position.addScaledVector(sunDirection, 40);
+  helper.update();
 
   //It makes the camera follow the cube/player
   controls.target.copy(cube.position);
