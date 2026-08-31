@@ -55,7 +55,7 @@ controls.update();
 // Fireflies
 const fireflyGeometry = new THREE.BufferGeometry();
 const fireflyVertices = [];
-for (let i = 0; i < 15; i++) {
+for (let i = 0; i < 20; i++) {
   let x = 20 * Math.random() - 10;
   let y = 3 * Math.random() + 1;
   let z = 20 * Math.random() - 10;
@@ -170,18 +170,22 @@ const skyPalettes = {
   midnight: {
     horizon: new THREE.Color(0x253a63),
     zenith: new THREE.Color(0x08152f),
+    ambient: new THREE.Color(0x263657),
   },
   sunrise: {
     horizon: new THREE.Color(0xffb36b),
     zenith: new THREE.Color(0x7378c8),
+    ambient: new THREE.Color(0xffb07c),
   },
   noon: {
     horizon: new THREE.Color(0xcfefff),
     zenith: new THREE.Color(0x2a66b7),
+    ambient: new THREE.Color(0xdceeff),
   },
   sunset: {
     horizon: new THREE.Color(0xe89a72),
     zenith: new THREE.Color(0x514789),
+    ambient: new THREE.Color(0xd98570),
   },
 };
 //sky shader material
@@ -358,6 +362,9 @@ function animate() {
   //setting the sun and moon position based on time
   const sunAngle = (timeOfDay - 0.25) * Math.PI * 2;
   sunDirection.set(Math.cos(sunAngle), Math.sin(sunAngle), 0);
+  const daylightFactor = THREE.MathUtils.smoothstep(sunDirection.y, 0, 1);
+  directionalLight.intensity = 3 * daylightFactor;
+  light.intensity = 0.4 + (0.8 - 0.4) * daylightFactor;
   sun.position.copy(sunDirection);
   sun.position.multiplyScalar(40);
 
@@ -378,6 +385,11 @@ function animate() {
       skyPalettes.sunrise.zenith,
       localT,
     );
+    light.color.lerpColors(
+      skyPalettes.midnight.ambient,
+      skyPalettes.sunrise.ambient,
+      localT,
+    );
   } else if (timeOfDay < 0.5) {
     const localT = (timeOfDay - 0.25) / (0.5 - 0.25);
     skyMaterial.uniforms.uHorizonColor.value.lerpColors(
@@ -388,6 +400,11 @@ function animate() {
     skyMaterial.uniforms.uZenithColor.value.lerpColors(
       skyPalettes.sunrise.zenith,
       skyPalettes.noon.zenith,
+      localT,
+    );
+    light.color.lerpColors(
+      skyPalettes.sunrise.ambient,
+      skyPalettes.noon.ambient,
       localT,
     );
   } else if (timeOfDay < 0.75) {
@@ -402,6 +419,11 @@ function animate() {
       skyPalettes.sunset.zenith,
       localT,
     );
+    light.color.lerpColors(
+      skyPalettes.noon.ambient,
+      skyPalettes.sunset.ambient,
+      localT,
+    );
   } else {
     const localT = (timeOfDay - 0.75) / (1 - 0.75);
     skyMaterial.uniforms.uHorizonColor.value.lerpColors(
@@ -412,6 +434,11 @@ function animate() {
     skyMaterial.uniforms.uZenithColor.value.lerpColors(
       skyPalettes.sunset.zenith,
       skyPalettes.midnight.zenith,
+      localT,
+    );
+    light.color.lerpColors(
+      skyPalettes.sunset.ambient,
+      skyPalettes.midnight.ambient,
       localT,
     );
   }
