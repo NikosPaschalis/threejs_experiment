@@ -4,6 +4,8 @@ import { keys } from './input.js';
 
 const scene = new THREE.Scene();
 //initialization of time
+const clock = new THREE.Clock();
+
 let timeOfDay = 0;
 const loader = new THREE.TextureLoader();
 const rockTexture = loader.load('./rock.png');
@@ -55,7 +57,7 @@ const fireflyGeometry = new THREE.BufferGeometry();
 const fireflyVertices = [];
 for (let i = 0; i < 15; i++) {
   let x = 20 * Math.random() - 10;
-  let y = 10 * Math.random() - 5;
+  let y = 3 * Math.random() + 1;
   let z = 20 * Math.random() - 10;
   fireflyVertices.push(x, y, z);
 }
@@ -64,10 +66,15 @@ fireflyGeometry.setAttribute(
   new THREE.Float32BufferAttribute(fireflyVertices, 3),
 );
 const fireflyMaterial = new THREE.ShaderMaterial({
-  uniforms: {},
+  uniforms: {
+    uCoreColor: { value: new THREE.Color(0xfff59d) },
+    uOuterColor: { value: new THREE.Color(0xffd600) },
+    uTime: { value: 0 },
+  },
   vertexShader: `
+
   void main(){
-  vec2 pointCoordinate = gl_PointCoord;
+  
   gl_PointSize = 20.0;
   gl_Position = 
   projectionMatrix * 
@@ -76,11 +83,24 @@ const fireflyMaterial = new THREE.ShaderMaterial({
   }
   `,
   fragmentShader: `
+  uniform vec3 uCoreColor;
+  uniform vec3 uOuterColor;
+  uniform float uTime;
   void main(){
-  vec3 finalColor = vec3(0.0, 1.0, 0.0);
-  gl_FragColor = vec4(finalColor,1.0);
+  vec2 pointCoordinate = gl_PointCoord;
+  vec2 center = vec2(0.5,0.5);
+  float distanceFromCenter = distance(pointCoordinate,center);
+
+  float glowStrength = 1.0 - smoothstep(0.0,0.5,distanceFromCenter);
+  float normalizedPulse = (1.0 + sin(uTime)) / 2.0 ;
+  float pulseStrength = mix(0.5,1.0,normalizedPulse);
+
+  vec3 finalColor = mix(uOuterColor, uCoreColor, glowStrength);
+  gl_FragColor = vec4(finalColor,glowStrength * pulseStrength);
   }
   `,
+  transparent: true,
+  blending: THREE.AdditiveBlending,
 });
 const fireflyParticles = new THREE.Points(fireflyGeometry, fireflyMaterial);
 scene.add(fireflyParticles);
@@ -290,7 +310,6 @@ leafInstances.instanceMatrix.needsUpdate = true;
 scene.add(grassField);
 scene.add(trunkInstances);
 scene.add(leafInstances);
-const clock = new THREE.Clock();
 
 function characterMovement(delta) {
   const direction = new THREE.Vector3(0, 0, 0);
@@ -325,6 +344,8 @@ const lengthOfDay = 60;
 const sunDirection = new THREE.Vector3();
 function animate() {
   const delta = clock.getDelta();
+
+  fireflyMaterial.uniforms.uTime.value += delta;
   cubePositionBeforeCollision = cubePositionBeforeCollision.copy(cube.position);
   cameraPositionBeforeCollision = cameraPositionBeforeCollision.copy(
     camera.position,
