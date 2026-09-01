@@ -1,5 +1,6 @@
 import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { keys } from './input.js';
 
 const scene = new THREE.Scene();
@@ -10,6 +11,19 @@ let timeOfDay = 0;
 const loader = new THREE.TextureLoader();
 const rockTexture = loader.load('./rock.png');
 rockTexture.colorSpace = THREE.SRGBColorSpace;
+
+const gltfLoader = new GLTFLoader();
+const pineTree = await gltfLoader.loadAsync('asset/tree.gltf');
+pineTree.scene.traverse((child) => {
+  if (child.isMesh) {
+    child.castShadow = true;
+    //child.receiveShadow = true;
+  }
+});
+pineTree.scene.scale.set(3, 2, 3);
+pineTree.scene.position.set(0, 1.6, 0);
+scene.add(pineTree.scene);
+
 const camera = new THREE.PerspectiveCamera(
   75,
   window.innerWidth / window.innerHeight,
@@ -232,12 +246,18 @@ const sky = new THREE.Mesh(skyGeometry, skyMaterial);
 scene.add(sky);
 //Sun
 const sunGeometry = new THREE.SphereGeometry(2, 64, 32);
-const sunMaterial = new THREE.MeshBasicMaterial({ color: 0xffcc33 });
+const sunMaterial = new THREE.MeshBasicMaterial({
+  color: 0xffcc33,
+  transparent: true,
+});
 const sun = new THREE.Mesh(sunGeometry, sunMaterial);
 sky.add(sun);
 //Moon
 const moonGeometry = new THREE.SphereGeometry(2, 64, 32);
-const moonMaterial = new THREE.MeshBasicMaterial({ color: 0xd8e6ff });
+const moonMaterial = new THREE.MeshBasicMaterial({
+  color: 0xd8e6ff,
+  transparent: true,
+});
 const moon = new THREE.Mesh(moonGeometry, moonMaterial);
 sky.add(moon);
 //Floor
@@ -267,16 +287,8 @@ const grassField = new THREE.InstancedMesh(
   grassMaterial,
   100000,
 );
-//Forest generation with instanceMesh
-const trunkInstances = new THREE.InstancedMesh(
-  trunkGeometry,
-  trunkMaterial,
-  40,
-);
-const leafInstances = new THREE.InstancedMesh(leafGeometry, leafMaterial, 40);
 const dummy = new THREE.Object3D();
-const trunkDummy = new THREE.Object3D();
-const leafDummy = new THREE.Object3D();
+
 //grass loop
 for (let i = 0; i < grassField.count; i++) {
   //grass dummy
@@ -289,31 +301,21 @@ for (let i = 0; i < grassField.count; i++) {
 
   grassField.setMatrixAt(i, dummy.matrix);
 }
-//tree loop
-for (let i = 0; i < trunkInstances.count; i++) {
-  //trunk dummy for position
-  trunkDummy.position.x = Math.random() * 100 - 50;
-  trunkDummy.position.z = Math.random() * 50 - 25;
-  trunkDummy.position.y = 1.5;
+//Pine tree forest
+for (let i = 0; i < 60; i++) {
+  const treeClone = pineTree.scene.clone();
+  treeClone.position.set(
+    Math.random() * 100 - 50,
+    1.5,
+    Math.random() * 50 - 25,
+  );
 
-  trunkDummy.updateMatrix();
-  //leaf dummy for position
-  leafDummy.position.x = trunkDummy.position.x;
-  leafDummy.position.z = trunkDummy.position.z;
-  leafDummy.position.y = 4;
+  treeClone.rotation.y = Math.random() * Math.PI * 2;
 
-  leafDummy.updateMatrix();
-  trunkInstances.setMatrixAt(i, trunkDummy.matrix);
-  leafInstances.setMatrixAt(i, leafDummy.matrix);
+  scene.add(treeClone);
 }
-trunkInstances.castShadow = true;
-leafInstances.castShadow = true;
 grassField.instanceMatrix.needsUpdate = true;
-trunkInstances.instanceMatrix.needsUpdate = true;
-leafInstances.instanceMatrix.needsUpdate = true;
 scene.add(grassField);
-scene.add(trunkInstances);
-scene.add(leafInstances);
 
 function characterMovement(delta) {
   const direction = new THREE.Vector3(0, 0, 0);
@@ -442,7 +444,31 @@ function animate() {
       localT,
     );
   }
+  if (timeOfDay >= 0.0 && timeOfDay < 0.25) {
+    //moon
+    sunMaterial.opacity = 0;
+    moonMaterial.opacity = 1;
+  } else if (timeOfDay >= 0.25 && timeOfDay < 0.3) {
+    // sun and moon
+    const sunriseFade = THREE.MathUtils.smoothstep(timeOfDay, 0.25, 0.3);
 
+    sunMaterial.opacity = sunriseFade;
+    moonMaterial.opacity = 1 - sunriseFade;
+  } else if (timeOfDay >= 0.3 && timeOfDay < 0.7) {
+    //sun
+    sunMaterial.opacity = 1;
+    moonMaterial.opacity = 0;
+  } else if (timeOfDay >= 0.7 && timeOfDay < 0.75) {
+    //sun and moon
+    const sunsetFade = THREE.MathUtils.smoothstep(timeOfDay, 0.7, 0.75);
+
+    sunMaterial.opacity = 1 - sunsetFade;
+    moonMaterial.opacity = sunsetFade;
+  } else {
+    //moon
+    sunMaterial.opacity = 0;
+    moonMaterial.opacity = 1;
+  }
   characterMovement(delta);
 
   verticalVelocity += gravity * delta;

@@ -1,0 +1,11 @@
+Model Information:
+* title:	Lowpoly tree
+* source:	https://sketchfab.com/3d-models/lowpoly-tree-75fba1cab5ec4f2796579e784e4e6fb3
+* author:	Vaidar (https://sketchfab.com/Vaidar)
+
+Model License:
+* license type:	CC-BY-4.0 (http://creativecommons.org/licenses/by/4.0/)
+* requirements:	Author must be credited. Commercial use is allowed.
+
+If you use this 3D model in your project be sure to copy paste this credit wherever you share it:
+This work is based on "Lowpoly tree" (https://sketchfab.com/3d-models/lowpoly-tree-75fba1cab5ec4f2796579e784e4e6fb3) by Vaidar (https://sketchfab.com/Vaidar) licensed under CC-BY-4.0 (http://creativecommons.org/licenses/by/4.0/)
