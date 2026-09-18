@@ -25,7 +25,6 @@ pineTree.scene.traverse((child) => {
   }
 });
 pineTree.scene.scale.set(3, 2, 3);
-pineTree.scene.position.set(0, 1.6, 0);
 
 const camera = new THREE.PerspectiveCamera(
   75,
