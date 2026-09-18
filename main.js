@@ -2,8 +2,11 @@ import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { keys } from './input.js';
+import { createSkySystem } from './skySystem.js';
+import { Water } from 'three/addons/objects/Water.js';
 
 const scene = new THREE.Scene();
+
 //initialization of time
 const clock = new THREE.Clock();
 
@@ -13,6 +16,7 @@ const rockTexture = loader.load('./rock.png');
 rockTexture.colorSpace = THREE.SRGBColorSpace;
 
 const gltfLoader = new GLTFLoader();
+//Pine Trees
 const pineTree = await gltfLoader.loadAsync('asset/tree.gltf');
 pineTree.scene.traverse((child) => {
   if (child.isMesh) {
@@ -22,7 +26,6 @@ pineTree.scene.traverse((child) => {
 });
 pineTree.scene.scale.set(3, 2, 3);
 pineTree.scene.position.set(0, 1.6, 0);
-scene.add(pineTree.scene);
 
 const camera = new THREE.PerspectiveCamera(
   75,
@@ -63,7 +66,7 @@ window.addEventListener('resize', () => {
 });
 const controls = new OrbitControls(camera, renderer.domElement);
 // controls.update() must be called after any manual changes to the camera's transform
-camera.position.set(0, 5, 5);
+camera.position.set(0, 5, 7);
 controls.update();
 
 // Fireflies
@@ -127,139 +130,67 @@ cube.castShadow = true;
 cube.position.set(0, 0.5, 0);
 
 scene.add(cube);
+//Sky creation call
+const {
+  sky,
+  skyMaterial,
+  sun,
+  sunMaterial,
+  moon,
+  moonMaterial,
+  skyPalettes,
+  update: updateSkySystem,
+} = createSkySystem(scene, cube);
 
 directionalLight.target = cube;
 const cubeBox = new THREE.Box3();
 cubeBox.setFromObject(cube);
+//Water
+// const waterGeometry = new THREE.PlaneGeometry(10, 20);
 
+// const water = new Water(waterGeometry, {
+//   textureWidth: 512,
+//   textureHeight: 512,
+//   waterNormals: new THREE.TextureLoader().load(
+//     'asset/waternormals.jpg',
+//     (t) => {
+//       t.wrapS = t.wrapT = THREE.RepeatWrapping;
+//     },
+//   ),
+//   sunDirection: new THREE.Vector3(0, 1, 0),
+//   sunColor: 0xffffff,
+//   waterColor: 0x006994,
+//   distortionScale: 3.7,
+// });
+// water.position.y = 0.1;
+// water.rotation.x = -Math.PI / 2; // ← μόνο αν το θες οριζόντιο
+
+// scene.add(water);
 // Collision objects
-const rockMaterial = new THREE.MeshStandardMaterial({ map: rockTexture });
-const rockGeometry = new THREE.BoxGeometry(1, 1, 1);
+const collisionObjsList = [];
 
-const rock = new THREE.Mesh(rockGeometry, rockMaterial);
-rock.position.set(3, 0.5, 0);
-rock.castShadow = true;
-scene.add(rock);
-const rockBox = new THREE.Box3();
-rockBox.setFromObject(rock);
+gltfLoader.load('asset/rocks.glb', (gltf) => {
+  const rock = gltf.scene.getObjectByName('Rock');
+  const darkRock = gltf.scene.getObjectByName('DarkRock');
 
-const rock2 = new THREE.Mesh(rockGeometry, rockMaterial);
-rock2.position.set(3, 0.5, 5);
-rock2.castShadow = true;
-scene.add(rock2);
-const rockBox2 = new THREE.Box3();
-rockBox2.setFromObject(rock2);
-//Tree
-//Trunk
-const trunkGeometry = new THREE.CylinderGeometry(0.5, 0.5, 3, 16);
-const trunkMaterial = new THREE.MeshStandardMaterial({ color: 0x954535 });
-const trunk = new THREE.Mesh(trunkGeometry, trunkMaterial);
-trunk.position.set(0, 1.5, 0);
-trunk.castShadow = true;
+  rock.position.set(3, 0, 0);
+  darkRock.position.set(3, 0, 5);
 
-//Leafs
-const leafGeometry = new THREE.ConeGeometry(3, 2, 4);
-const leafMaterial = new THREE.MeshStandardMaterial({ color: 0x2d9966 });
-const leaf = new THREE.Mesh(leafGeometry, leafMaterial);
-leaf.position.set(0, 4, 0);
-leaf.castShadow = true;
+  rock.castShadow = true;
+  rock.receiveShadow = true;
 
-//tree group
-const tree = new THREE.Group();
-tree.add(trunk);
-tree.add(leaf);
-tree.position.set(5, 0, 5);
-scene.add(tree);
+  darkRock.castShadow = true;
+  darkRock.receiveShadow = true;
 
-tree.updateMatrixWorld(true);
+  scene.add(rock);
+  scene.add(darkRock);
 
-const trunkBox = new THREE.Box3();
-trunkBox.setFromObject(trunk);
-const collisionObjsList = [rockBox, rockBox2, trunkBox];
-//Sky
-const skyGeometry = new THREE.SphereGeometry(50, 32, 16);
-//Sky Color Paletee
+  const rockBox = new THREE.Box3().setFromObject(rock);
+  const rockBox2 = new THREE.Box3().setFromObject(darkRock);
 
-const skyPalettes = {
-  midnight: {
-    horizon: new THREE.Color(0x253a63),
-    zenith: new THREE.Color(0x08152f),
-    ambient: new THREE.Color(0x263657),
-  },
-  sunrise: {
-    horizon: new THREE.Color(0xffb36b),
-    zenith: new THREE.Color(0x7378c8),
-    ambient: new THREE.Color(0xffb07c),
-  },
-  noon: {
-    horizon: new THREE.Color(0xcfefff),
-    zenith: new THREE.Color(0x2a66b7),
-    ambient: new THREE.Color(0xdceeff),
-  },
-  sunset: {
-    horizon: new THREE.Color(0xe89a72),
-    zenith: new THREE.Color(0x514789),
-    ambient: new THREE.Color(0xd98570),
-  },
-};
-//sky shader material
-const skyMaterial = new THREE.ShaderMaterial({
-  uniforms: {
-    uHorizonColor: { value: skyPalettes.midnight.horizon.clone() },
-    uZenithColor: { value: skyPalettes.midnight.zenith.clone() },
-    uTimeOfDay: { value: timeOfDay },
-    uGradientStart: { value: 0.1 },
-    uGradientEnd: { value: 0.8 },
-  },
-  vertexShader: `
-
-  varying vec3 vPosition;
-  void main(){
-
-  gl_Position = 
-  projectionMatrix * 
-  modelViewMatrix *
-  vec4(position,1.0);
-  vPosition = normalize(position);
-  }
-  `,
-  fragmentShader: `
-
-  varying vec3 vPosition;
-  uniform vec3 uHorizonColor;
-  uniform vec3 uZenithColor;
-  uniform float uGradientStart;
-  uniform float uGradientEnd;
-  uniform float uTimeOfDay;
-  void main(){
-  vec3 up = vec3(0.0,1.0,0.0);
-  float skyHeight = dot(vPosition,up);
-  float gradientFactor = smoothstep(uGradientStart, uGradientEnd, skyHeight);
-  vec3 finalColor = mix(uHorizonColor,uZenithColor, gradientFactor);
-
-  gl_FragColor = vec4(finalColor,1.0);
-  }
-  `,
-  side: THREE.BackSide,
+  collisionObjsList.push(rockBox, rockBox2);
 });
-const sky = new THREE.Mesh(skyGeometry, skyMaterial);
-scene.add(sky);
-//Sun
-const sunGeometry = new THREE.SphereGeometry(2, 64, 32);
-const sunMaterial = new THREE.MeshBasicMaterial({
-  color: 0xffcc33,
-  transparent: true,
-});
-const sun = new THREE.Mesh(sunGeometry, sunMaterial);
-sky.add(sun);
-//Moon
-const moonGeometry = new THREE.SphereGeometry(2, 64, 32);
-const moonMaterial = new THREE.MeshBasicMaterial({
-  color: 0xd8e6ff,
-  transparent: true,
-});
-const moon = new THREE.Mesh(moonGeometry, moonMaterial);
-sky.add(moon);
+
 //Floor
 const floorGeometry = new THREE.PlaneGeometry(100, 50, 2);
 const floorMaterial = new THREE.MeshStandardMaterial({ color: 0x008000 });
@@ -359,6 +290,9 @@ function animate() {
   timeOfDay += delta / lengthOfDay;
   //we need to keep the value 0-1 otherwise it keeps increasing
   timeOfDay = timeOfDay % 1;
+
+  updateSkySystem(timeOfDay, camera.position, cube.position);
+
   skyMaterial.uniforms.uTimeOfDay.value = timeOfDay;
 
   //setting the sun and moon position based on time
@@ -509,7 +443,7 @@ function animate() {
   //It makes the camera follow the cube/player
   controls.target.copy(cube.position);
   controls.update();
-  sky.position.copy(camera.position);
+
   renderer.render(scene, camera);
 }
 renderer.setAnimationLoop(animate);
